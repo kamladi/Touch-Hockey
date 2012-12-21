@@ -160,7 +160,8 @@ class Game
 	isScore: ->
 		goalSize = @P1.goalSize
 		if (@P1.getY() + @P1.radius) is @H
-			
+			return
+
 	#return distance between two (x,y) coords
 	distance: (x1, y1, x2, y2) ->
 		dx = x2 - x1
