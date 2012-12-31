@@ -3,10 +3,13 @@
 AppFiles = [
 	'./server.coffee'
 	'./Player.coffee'
+	'./Puck.coffee'
+	'./Game.coffee'
 	'./public/js/Game.coffee'
 	'./public/js/Main.coffee'
 	'./public/js/Player.coffee'
 	'./public/js/Puck.coffee'
+	'./public/js/GameObject.coffee'
 ]
 
 task 'watch', 'Watch and build coffeescript files in current directory and in /public', ->

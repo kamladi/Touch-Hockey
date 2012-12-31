@@ -1,5 +1,3 @@
 window.onload = ->
-	window.GAME = new Game(PLAYER)
-	#prevent scrolling
-	document.body.addEventListener 'touchmove', (event) ->
-  		event.preventDefault();
+	window.scrollTo(0, 1);
+	window.GAME = new Game()

@@ -1,22 +1,12 @@
 ###
-Player class on Node Server
+Player class (server side)
 ###
-class Player
-	constructor: (@x, @y, @color) ->
-		@id = 0
-		@dx = 0
-		@dy = 0
-		@goalSize = 100
-	getX: ->
-		@x
-	getY: ->
-		@y
-	setX: (x) ->
-		@x = x
-	setY: (y) ->
-		@y = y
-	updatePos: (x, y) ->
-		@setX x
-		@setY y
+GameObject = require './public/js/GameObject'
 
-exports = Player
+class Player extends GameObject
+	constructor: (@id) ->
+		super()
+		@radius = 25
+		@goalSize = 100
+
+module.exports = Player

@@ -1,6 +1,7 @@
 class Game
 	constructor: ->
 		@canvas = document.getElementById 'game'
+		@$canvas = $(@canvas)
 		@ctx = @canvas.getContext '2d'
 		@W = @canvas.width
 		@H = @canvas.height
@@ -11,151 +12,149 @@ class Game
 		#init puck, 2 players
 		#p1 is always the current client
 		#p2 is the OTHER player
-		@PUCK = new Puck(@socket)
-		p1_radius = p2_radius = 25
+		
+		p1_radius = 25
 		@P1 = new Player @W/2, @H - p1_radius, p1_radius, 'red'
-		@P2 = new Player @W/2, 0 + p2_radius, p2_radius, 'blue'
-
-		#add ref to socket in player1 and puck
-		@P1.socket = @socket
-		@PUCK.socket = @socket
 
 		@initEventHandlers()
 
-		#60fps timer
-		timer = setinterval @gameLoop, 15
-
-	initSockets = ->
-		@socket = io.connect 'http://localhost:3000'
-		@socket.on 'connect', =>
-			console.log "connected to server"
-			name = prompt("Welcome! Enter a nickname")
-			if name is ""
-				console.log "no name entered"
-				return false
-			console.log "entered " + name
-			@socket.emit 'set nickname', name
-		@socket.on 'ready', (data) ->
-			console.log "connected as #{data.nickname}"
+	initSockets: ->
+		@socket = io.connect window.location.hostname 		
+		@socket.on 'connect', @setup
+		@socket.on 'ready', @onReady
+		@socket.on 'start game', @onStart
+		@socket.on 'puck move', @onPuckMove
 		@socket.on 'player move', @onPlayerMove
-		###
-		...other game events
-		###
+		@socket.on 'collision', ->
+			console.log "COLLISION"
 
 	initEventHandlers: ->
-		@canvas.on 'mousemove', @onMouseMove
-		@canvas.on 'touchmove', @onTouchMove
+		###
+		@$canvas.on 'mousemove', @onMouseMove
+		@$canvas.on 'touchmove', @onTouchMove
+		###
+		#using custom jquery plugin for mouse/touch move events
+		@$canvas.on 'move', @onMove
 
-	#simply convert mouse evt to touch evt
-	onMouseMove: (e) =>
-		e.touches = [{clientX: e.clientX, clientY: e.clientY}]
-		@onTouchMove e
+	setup: () =>
+		console.log "connected to server"
+		#get player nickname
+		name = prompt("Welcome! Enter a nickname")
+		if name is ""
+			console.log "no name entered"
+			return false
+		console.log "entered " + name
+		setupInfo = 
+			name: name
+		@socket.emit 'setup', setupInfo
 
-	onTouchMove: (e) =>
-		console.log e
-		x = e.touches[0].clientX
-		y = e.touches[0].clientY
-		console.log "x: #{x}, y: #{y}"
+	#server will send misc. configs with this event
+	#playernum determines if this client is player 1/2
+	onReady: (data) =>
+		console.log "connected as #{data.nickname}"
+		@name = data.name
+		@playernum = data.playernum
+
+	onStart: (data) =>
+		console.log "leggo!"
+		@PUCK = new Puck @W/2, @H/2, 'black'
+		p2_radius = 25
+		@P2 = new Player @W/2, 0 + p2_radius, p2_radius, 'gray'
+		window.requestAnimFrame @gameLoop
+
+	onMove: (e) =>
+		console.log "MOVING PADDLE"
+		x = e.pageX
+		y = e.pageY
 		radius = @P1.radius
+		maxleft = 0 + radius
+		maxright = @canvas.width - radius
+		maxbottom = @canvas.height - radius
+		#paddle must stay in lower half
+		maxtop = (@canvas.height/2) + radius
 
+		###
+		Reposition paddle if out of bounds
+		###
 		#check left wall
-		if (x - radius) < 0
-			x = radius
+		x = maxleft if x < maxleft
 		#check right wall
-		if @canvas.width < (x + radius)
-			x = @canvas.width - radius
+		x = maxright if maxright < x
 		#check bottom
-		if @canvas.height < (y + radius)
-			y = @canvas.height - radius
+		y = maxbottom if maxbottom < y
 		#paddle can't go into upper half of table
-		if (y +radius) < (@canvas.height / 2)
-			y = (@canvas.height / 2) + @p1.radius
+		y = maxtop if y < maxtop
 		
-		#save new dx, dy
-		dx = x - @P1.getX()
-		dy = y - @P1.getY()
+		#save new dx, dy given by move event
+		dx = e.velocityX * 15 ? -5
+		dy = e.velocityY * 15 ? -5
 		
 		#update position
-		@P1.updatePos x, y, dx, dy
-		@socket.emit 'player move', {
+		@P1.updatePos 
 			x: x
 			y: y
 			dx: dx
 			dy: dy
-		}
+			lastUpdate: Date.now()
 
-	#NOTE: we receive coords for player 2 paddle
-	#BUT: we need to flip the coords to place the puck on
-		#the OTHER side of the table
+		#send update to server
+		@socket.emit 'player move', @P1.coords()
+
+	#handler for updating client location of puck
+	#when it collides on the other device
+	#NOTE: we need to flip the coords and directions 
+		#to place the puck on the OTHER side of the table
+		#if we are player2
+	onPuckMove: (data) =>
+		if @playernum is 2
+			@PUCK.updatePos @reverseCoords data
+		else
+			@PUCK.updatePos data
+
+	#update coords for player 2 paddle
+	#NOTE: we need to flip the coords and directions 
+	#to place the P2 paddle on the OTHER side of the table
 	onPlayerMove: (data) =>
-		@P2.x = @W - data.x
-		@P2.y = @H - data.y
+		@P2.updatePos @reverseCoords data
+		#show client that P2 is 'alive'
+			#by changing its color
+		@P2.color = "blue"
+	
+	#Main game loop
+	gameLoop: =>
+		window.requestAnimFrame @gameLoop
 
-	gameLoop: ->
-		drawGame()
-
-		#update positions
-		@PUCK.x += @PUCK.dx
-		@PUCK.y += @PUCK.dy
-
-		#check puck collision with wall
-		x = @PUCK.x
-		y = @PUCK.y
-		radius = @PUCK.radius
-		#check left wall
-		if (x - radius) < 0
-			x = radius
-		#check right wall
-		if @canvas.width < (x + radius)
-			x = @canvas.width - radius
-		#check bottom
-		if @canvas.height < (y + radius)
-			y = @canvas.height - radius
-		#check top
-		if (y + radius) < 0
-			y = radius
-
-		# check puck collision with paddle
-		dist = @distance x1, y1, x2, y2
-		if dist < (@P1.radius + @PUCK.radius)
-			#...collision magic happens
-			@PUCK.dy = -@PUCK.dx
-			@PUCK.dx = -@PUCK.dy
-			#determine angle of puck after collision
-			paddle_angle = @P1.getAngle()
-			puck_angle = @PUCK.getAngle()
-			diff = puck_angle - paddle_angle
-			new_angle = paddle_angle - diff
-			#add velocity components of paddle 
-				#to veloctiy components of puck
-			@PUCK.dx += @P1.dx * Math.cos(new_angle)
-			@PUCK.dy += @P1.dy * Math.sin(new_angle)
-
+		@drawGame()
 
 	###
 	DRAW FUNCTIONS
 	###
-	drawGame: ->
-		#reset board
-		@ctx.fillStyle = "white"
-		@ctx.fillRect 0, 0, @W, @H
+	drawGame: =>
+		#draw table
+		@drawTable()
 
-		#draw player 1 piece
-		@P1.drawPiece @ctx
-		@P1.drawPiece @ctx
-
-		#draw puck
-		@PUCK.draw @ctx
-
+		@P1.draw(@ctx)
+		@P2.draw(@ctx)
+		@PUCK.draw(@ctx)
+	
 	#draw design for air hockey table
-	drawTable: () ->
-		@ctx
+	drawTable: =>
+		#reset canvas to white background
+		@ctx.fillStyle = "white"
+		@ctx.fillRect(0, 0, @W, @H)
+		#draw outline
+		@ctx.strokeStyle = "blue"
+		@ctx.strokeRect(0, 0, @W, @H)
+		#draw middle line
+		@ctx.moveTo(0, @H/2)
+		@ctx.lineTo(@W, @H/2)
+		@ctx.stroke()
 
 
 	###
 	UTIL FUNCTIONS
 	###
-
+	
 	#determine if P1 has been scored on
 	isScore: ->
 		goalSize = @P1.goalSize
@@ -163,7 +162,16 @@ class Game
 			return
 
 	#return distance between two (x,y) coords
-	distance: (x1, y1, x2, y2) ->
-		dx = x2 - x1
-		dy = y2 - y1
+	distance: (obj1, obj2) ->
+		dx = obj2.x - obj1.x
+		dy = obj2.y - obj1.y
 		Math.sqrt (dx*dx) + (dy*dy)
+	
+	reverseCoords: (coords) ->
+		x: @W - coords.x
+		y: @H - coords.y
+		dx: -(coords.dx)
+		dy: -(coords.dy)
+		lastUpdate: coords.lastUpdate
+
+window.Game = Game

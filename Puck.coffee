@@ -1,18 +1,14 @@
 ###
-PUCK object (client side)
+Puck class (server side)
 ###
+GameObject = require './public/js/GameObject'
 
 class Puck extends GameObject
-	constructor: (@x, @y, @color) ->
+	constructor: (@x, @y) ->
 		super()
+		@dx = 3
+		@dy = 3
 		@radius = 10
-
-	draw: (ctx) ->
-		ctx.beginPath()
-		ctx.arc @x, @y, @radius, 0, Math.PI*2, false
-		ctx.closePath()
-		ctx.fillStyle = @color
-		ctx.fill()
 
 	#check puck collision with wall
 	# returns true if it needs to bounce, false otherwise
@@ -47,4 +43,4 @@ class Puck extends GameObject
 			@dy = -@dy
 			return true
 
-window.Puck = Puck
+module.exports = Puck

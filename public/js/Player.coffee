@@ -1,33 +1,16 @@
-class Player
+###
+PLAYER object (client side)
+###
+
+class Player extends GameObject
 	constructor: (@x, @y, @radius, @color)->
-		@dx=0
-		@dy=0
-	
-	getX: ->
-		@x
-	getY: ->
-		@y
-	setX: (x) ->
-		@x = x
-	setY: (y) ->
-		@y = y
-	getAngle: ->
-		Math.atan2 @dy, @dx
-	getMagnitude: ->
-		Math.sqrt (@dx*@dx) + (@dy*@dy)
+		super()
 
-	onPosChange: (data) ->
-		@x = data.x
-		@y = data.y
-		@dx = data.dx
-		@dy = data.dy
-
-	drawPaddle: (ctx) ->
+	draw: (ctx) ->
 		ctx.beginPath()
 		ctx.arc @x, @y, @radius, 0, Math.PI*2, false
+		ctx.closePath()
 		ctx.fillStyle = @color
 		ctx.fill()
 
-	updatePos: (x, y, dx, dy) ->
-		@setX x
-		@setY y
+window.Player = Player
