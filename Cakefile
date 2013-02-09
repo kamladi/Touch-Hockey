@@ -10,6 +10,7 @@ AppFiles = [
 	'./public/js/Player.coffee'
 	'./public/js/Puck.coffee'
 	'./public/js/GameObject.coffee'
+	'./public/js/Dialog.coffee'
 ]
 
 task 'watch', 'Watch and build coffeescript files in current directory and in /public', ->
