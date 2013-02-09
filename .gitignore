@@ -1,2 +1,11 @@
-*.js
-public/*.js
+./server.js
+./Player.js
+./Puck.js
+./Game.js
+./public/js/Game.js
+./public/js/Main.js
+./public/js/Player.js
+./public/js/Puck.js
+./public/js/GameObject.js
+./public/js/Dialog.js
+./node_modules/*
