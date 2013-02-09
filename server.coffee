@@ -15,34 +15,20 @@ app.get '/', (req, res) ->
 
 GAME_STARTED = false
 PLAYERCOUNT = 0
-GAME = new Game 320, 480, io.sockets
+GAME = new Game 300, 440, io.sockets
 ###
 Manage socket connections
 ###
 io.sockets.on 'connection', (client) ->
 	console.log "New Player: #{client.id} connected"
 
-	if PLAYERCOUNT is 0
-		GAME.P1 = new Player client.id
-		#initial position settings
-		GAME.P1.set
-			x: GAME.W / 2
-			y: GAME.H - GAME.P1.radius
-			dx: 0
-			dy: 0
-			lastUpdate: Date.now()
+	if PLAYERCOUNT < 2
+		GAME.addPlayer client.id
 		PLAYERCOUNT += 1
-		console.log "waiting for player 2..."
-	else if PLAYERCOUNT is 1
-		GAME.P2 = new Player client.id
-		#initial position settings
-		GAME.P2.updatePos
-			x: GAME.W / 2
-			y: 0 + GAME.P2.radius
-			dx: 0
-			dy: 0
-			lastUpdate: Date.now()
-		PLAYERCOUNT += 1
+		if PLAYERCOUNT is 1
+			console.log "waiting for player 2..."
+		else
+			console.log "2 players connected. begin"
 	else
 		console.log "SPECTATOR CONNECTED"
 	console.log "#{PLAYERCOUNT} players currently connected"
@@ -81,17 +67,34 @@ io.sockets.on 'connection', (client) ->
 			player.updatePos data
 		#send update to other player
 		client.broadcast.emit 'player move', data
+
+	#when one player pauses, mark both players as not ready
+	#each player should individually confirm ready
+	client.on 'pause', ->
+		player = GAME.getPlayer(client.id)
+		client.broadcast.emit 'pause', player.name
+		GAME.pause()
+	
+	#clients let server know they are ready to resume playing
+	client.on 'resume', ->
+		GAME.getPlayer(client.id).isReady = true
+		#we only resume the game if the other player is also ready
+		if GAME.getOtherPlayer(client.id).isReady
+			GAME.start()
 	
 	#when player disconnects
 	client.on 'disconnect', () ->
+		GAME.pause()
 		player = GAME.getPlayer client.id
 		if player
-			player = null
+			name = player.name
+			GAME.removePlayer client.id
 			console.log "Player #{client.id} disconnected"
 			PLAYERCOUNT -= 1
 			console.log "#{PLAYERCOUNT} players remaining"
-			if PLAYERCOUNT is 0
-				GAME.pause()
+			
+			#let other player know you disconnected
+			client.broadcast.emit 'player disconnect', name
 
 port = process.env.PORT or 8080
 server.listen port

@@ -6,8 +6,8 @@ GameObject = require './public/js/GameObject'
 class Puck extends GameObject
 	constructor: (@x, @y) ->
 		super()
-		@dx = 3
-		@dy = 3
+		@dx = 2
+		@dy = 2
 		@radius = 10
 
 	#check puck collision with wall

@@ -3,13 +3,23 @@
 	<head>
 		<title>TOUCH HOCKEY</title>
 		<!--prevent zoom-->
-		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<!--<meta name="viewport" content="width=device-width, initial-scale=1"/>-->
+		<meta name="viewport" content="width=device-width, initial-scale=0.75, user-scalable=no"/>
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<link rel="stylesheet" href="style.css">
 	</head>
 	
 	<body>
-		<canvas id="game" width="320px" height="480px"></canvas>
+		<canvas id="game" width="300px" height="440px"></canvas>
+		<div id="score">
+			<strong>Score</strong>
+			<span class="name">Player 1: </span><strong class="score">0</strong>
+			<span class="name">Player 2: </span><strong class="score">0</strong>
+		</div>
+		<div id="dialog-container">
+			<div id="dialog">
+			</div>
+		</div>
 	</body>
 	
 	<script src="/socket.io/socket.io.js"></script>
@@ -20,6 +30,7 @@
 	
 	<script src="js/requestAnimationShim.js"></script>
 	<script src="js/GameObject.js"></script>
+	<script src="js/Dialog.js"></script>
 	<script src="js/Puck.js"></script>
 	<script src="js/Player.js"></script>
 	<script src="js/Game.js"></script>

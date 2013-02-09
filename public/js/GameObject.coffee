@@ -7,6 +7,7 @@ class GameObject
 		@dx = 0
 		@dy = 0
 		@lastUpdate = Date.now()
+		@goalSize= 100
 	
 	#general function for applying multipl properties
 	#simultaneously, i.e. x/y, name, width, height, ...

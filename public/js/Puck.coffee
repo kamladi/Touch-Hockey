@@ -8,6 +8,7 @@ class Puck extends GameObject
 		@radius = 10
 
 	draw: (ctx) ->
+		ctx.lineWidth = 0
 		ctx.beginPath()
 		ctx.arc @x, @y, @radius, 0, Math.PI*2, false
 		ctx.closePath()
