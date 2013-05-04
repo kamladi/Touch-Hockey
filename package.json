@@ -5,7 +5,7 @@
 	"author": "Kedar Amladi, Andy Peng",
 	"dependencies": {
 		"express": "3.0.x",
-		"socket.io": ">= 0.9.11",
+		"socket.io": ">= 0.9.14",
 		"coffee-script": ">= 1.4.0"
 	},
 	"engines": {
