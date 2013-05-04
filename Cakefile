@@ -1,34 +1,30 @@
-{spawn} = require 'child_process'
+{exec} = require 'child_process'
 
-AppFiles = [
-	'./server.coffee'
-	'./Player.coffee'
-	'./Puck.coffee'
-	'./Game.coffee'
-	'./public/js/Game.coffee'
-	'./public/js/Main.coffee'
-	'./public/js/Player.coffee'
-	'./public/js/Puck.coffee'
-	'./public/js/GameObject.coffee'
-	'./public/js/Dialog.coffee'
-]
+task 'build', 'One-time build of coffeescript files in current directory and in /public', ->
+	#watch server-side Coffeescript
+	exec 'coffee --compile --output . src/', (err, stdout, stderr) ->
+    	throw err if err
+    	console.log stdout + stderr
+	#watch client-side Coffeescript
+	exec 'coffee --compile --output public/js/ public/src/', (err, stdout, stderr) ->
+    	throw err if err
+    	console.log stdout + stderr
 
 task 'watch', 'Watch and build coffeescript files in current directory and in /public', ->
-	#build server side Coffeescript
-	for file in AppFiles
-		cmd = spawn 'coffee', ['-cw', file]
-		cmd.stderr.on 'data', (data) ->
-			process.stderr.write data.toString()
-		cmd.stdout.on 'data', (data) ->
-			console.log data.toString().trim()
+	#watch server-side Coffeescript
+	exec 'coffee --watch --compile --output . src/', (err, stdout, stderr) ->
+    	throw err if err
+    	console.log stdout + stderr
+	#watch client-side Coffeescript
+	exec 'coffee --watch --compile --output public/js/ public/src/', (err, stdout, stderr) ->
+    	throw err if err
+    	console.log stdout + stderr
 
 
 task 'restart', 'Restart Node server', ->
-	cmd = spawn 'nodemon', ['./server.coffee']
-	cmd.stderr.on 'data', (data) ->
-		process.stderr.write data.toString()
-	cmd.stdout.on 'data', (data) ->
-		console.log data.toString().trim()
+	exec 'nodemon ./server.js', (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
 
 
 task 'dev', 'Dev Mode: watching for cahanges and restarting Node server', ->
